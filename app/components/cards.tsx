@@ -15,7 +15,7 @@ interface CardsProps {
 
 const Cards = ({ items }: CardsProps) => {
     return (
-<       div className="flex flex-row gap-4">
+        <div className="flex flex-row gap-5 flex-wrap mt-5 w-full">
                 {items.map((item, index) => (
                 <Card 
                     key={index}

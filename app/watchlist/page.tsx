@@ -1,11 +1,9 @@
 // page.tsx (Home)
 import Nav from "../components/nav";
 import Cards from "../components/cards";
+import list from "./list";
 
-const list = [
-    {name: "One Piece", status: "Watching", episodes: 1156, score: 8, tier: "S" },
-    {name: "Naruto", status: "Dropped", episodes: 220, score: 7.5, tier: "A" },
-];
+
 
 export default function Home() {
     return (
