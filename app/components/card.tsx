@@ -7,25 +7,35 @@ interface CardProps {
     score?: number;
     tier?: string;
 }
+const statusStyles: { [key: string]: string } = {
+  watching: "border-blue-600 text-white",
+  completed: "border-green-600 text-white",
+  dropped: "border-red-600 text-white",
+  planned: "border-gray-700 text-white",
+  // dodaj inne statusy według potrzeb
+};
 
 const Card = ({ name, status, episodes, score, tier }: CardProps) => {
-    return (
-        <div aria-label={name} className="bg-[#25262E] rounded text-xl w-3xs h-64 shadow p-5 hover:cursor-pointer hover:bg-[#2A2B32] hover:transform hover:scale-105 transition-all duration-200">
-            <h2 className="text-2xl mb-2 text-center">{name}</h2>
-                <p>Status: {status}</p>
-                {episodes && <p>Episodes: {episodes}</p>}
-                
-                {/* Wyświetl score tylko jeśli status to "completed" */}
-                {status.toLowerCase() === "completed" && (
-                    <p>Score: {score === undefined || score === 0 ? "N/A" : score}</p>
-                )}
-                
-                {/* Wyświetl tier tylko jeśli status to "completed" */}
-                {status.toLowerCase() === "completed" && tier && (
-                    <p>Tier: {tier}</p>
-                )}
-        </div>
-    );
-}
+  // Wersja case-insensitive:
+  const normalizedStatus = status?.toLowerCase() || "";
+  const cardStyle = statusStyles[normalizedStatus] || "bg-[#25262E] text-xl";
+  
+  return (
+    <div className={`rounded-2xl w-3xs h-64 hover:cursor-pointer hover:bg-[#2A2B32] transition-all hover:scale-110 shadow p-5 border-2 ${cardStyle}`}>
+      <div aria-label={name} className="">
+        <h2 className="text-2xl mb-2 text-center font-bold">{name}</h2>
+        <p>Status: {status}</p>
+        {episodes && <p>Episodes: {episodes}</p>}
+
+        {normalizedStatus === "watched" && (
+          <p>Score: {score === undefined || score === 0 ? "N/A" : score}</p>
+        )}
+        {normalizedStatus === "watched" && tier && (
+          <p>Tier: {tier}</p>
+        )}
+      </div>
+    </div>
+  );
+};
 
 export default Card;
