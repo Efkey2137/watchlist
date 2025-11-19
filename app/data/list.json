@@ -1,0 +1,165 @@
+[
+  {
+    "name": "Monster",
+    "status": "completed",
+    "score": 9.5,
+    "tier": "PEAK"
+  },
+  {
+    "name": "Sakamoto Days",
+    "status": "completed",
+    "score": 8,
+    "tier": "Fun2Watch"
+  },
+  {
+    "name": "Code Geass: Lelouch of the Rebellion",
+    "status": "completed",
+    "score": 10,
+    "tier": "PEAK"
+  },
+  {
+    "name": "Fire Force",
+    "status": "planned",
+    "score": 0,
+    "tier": "",
+    "order": 1
+  },
+  {
+    "name": "Lord of Mysteries",
+    "status": "planned",
+    "score": 0,
+    "tier": "",
+    "order": 5
+  },
+  {
+    "name": "Vinland Saga",
+    "status": "planned",
+    "score": 0,
+    "tier": "",
+    "order": 6
+  },
+  {
+    "name": "Kingdom",
+    "status": "planned",
+    "score": 0,
+    "tier": "",
+    "order": 7
+  },
+  {
+    "name": "Zapiski Zielarki (Kusuriya no Hitorigoto)",
+    "status": "planned",
+    "score": 0,
+    "tier": "",
+    "order": 8
+  },
+  {
+    "name": "Dan Da Dan",
+    "status": "planned",
+    "score": 0,
+    "tier": "",
+    "order": 9
+  },
+  {
+    "name": "Hikaru ga shinda natsu",
+    "status": "planned",
+    "score": 0,
+    "tier": "",
+    "order": 10
+  },
+  {
+    "name": "Ranking of Kings",
+    "status": "planned",
+    "score": 0,
+    "tier": "",
+    "order": 11
+  },
+  {
+    "name": "Erased",
+    "status": "planned",
+    "score": 0,
+    "tier": "",
+    "order": 12
+  },
+  {
+    "name": "Made in Abyss",
+    "status": "planned",
+    "score": 0,
+    "tier": "",
+    "order": 13
+  },
+  {
+    "name": "Mashle: Magic and Muscles",
+    "status": "planned",
+    "score": 0,
+    "tier": "",
+    "order": 14
+  },
+  {
+    "name": "Oshi no Ko",
+    "status": "planned",
+    "score": 0,
+    "tier": "",
+    "order": 15
+  },
+  {
+    "name": "My Hero Academia",
+    "status": "planned",
+    "score": 0,
+    "tier": "",
+    "order": 16
+  },
+  {
+    "name": "Black Clover",
+    "status": "planned",
+    "score": 0,
+    "tier": "",
+    "order": 17
+  },
+  {
+    "name": "Dr. Stone",
+    "status": "planned",
+    "score": 0,
+    "tier": "",
+    "order": 18
+  },
+  {
+    "name": "Sanda",
+    "status": "planned",
+    "score": 0,
+    "tier": "",
+    "order": 19
+  },
+  {
+    "name": "Sword Art Online",
+    "status": "planned",
+    "score": 0,
+    "tier": "",
+    "order": 20
+  },
+  {
+    "name": "Re:Zero",
+    "status": "planned",
+    "score": 0,
+    "tier": "",
+    "order": 21
+  },
+  {
+    "name": "One Punch Man",
+    "status": "planned",
+    "score": 0,
+    "tier": "",
+    "order": 22
+  },
+  {
+    "name": "One Piece",
+    "status": "watching",
+    "score": 8,
+    "tier": "Fun2Watch"
+  },
+  {
+    "name": "Bleach",
+    "status": "completed",
+    "score": 10,
+    "tier": "PEAK"
+  }
+]
