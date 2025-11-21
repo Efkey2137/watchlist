@@ -1,9 +1,9 @@
+// app/context/AuthContext.tsx
 "use client";
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { auth, googleProvider } from "../lib/firebase";
 import { signInWithPopup, signOut, onAuthStateChanged, User } from "firebase/auth";
 
-// Definiujemy, jak wygląda nasz Context (jakie dane udostępnia)
 interface AuthContextType {
   user: User | null;
   loading: boolean;
@@ -34,7 +34,6 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   return (
-    // 'value' musi pasować do interfejsu AuthContextType
     <AuthContext.Provider value={{ user, googleSignIn, logOut, loading }}>
       {children}
     </AuthContext.Provider>
@@ -43,8 +42,6 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
 
 export const useUserAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useUserAuth must be used within an AuthContextProvider");
-  }
+  if (!context) throw new Error("useUserAuth must be used within AuthContextProvider");
   return context;
 };

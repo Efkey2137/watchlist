@@ -1,7 +1,11 @@
 "use client"
 import { useState } from "react";
+import { db } from "../lib/firebase"; // Import bazy
+import { collection, addDoc } from "firebase/firestore";
+import { useUserAuth } from "../context/AuthContext"; // Import usera
 
 const AddForm = () => {
+    const { user } = useUserAuth(); // Pobieramy zalogowanego usera
     const [status, setStatus] = useState("planned");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -11,32 +15,34 @@ const AddForm = () => {
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        setIsSubmitting(true);
+        
+        if (!user) {
+            alert("Musisz być zalogowany!");
+            return;
+        }
 
+        setIsSubmitting(true);
         const formData = new FormData(e.currentTarget);
-        const data = {
+        
+        // Przygotowanie danych
+        const newItem = {
             name: formData.get('title') as string,
             status: formData.get('status') as string,
-            score: formData.get('score') as string,
-            tier: formData.get('tier') as string,
+            score: Number(formData.get('score')) || 0,
+            tier: formData.get('tier') as string || "",
+            order: 0, // Logikę orderu można dodać później (np. pobrać max order + 1)
+            userId: user.uid, // Przypisujemy anime do konkretnego użytkownika
+            createdAt: new Date()
         };
 
         try {
-            const response = await fetch('/api/add-anime', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data),
-            });
+            // ZAPIS DO FIREBASE (zamiast fetch API)
+            // Tworzymy kolekcję wewnątrz dokumentu użytkownika: users -> UID -> items
+            await addDoc(collection(db, "users", user.uid, "items"), newItem);
 
-            if (response.ok) {
-                alert('Anime added successfully!');
-                (e.target as HTMLFormElement).reset();
-                setStatus('planned');
-            } else {
-                alert('Failed to add anime');
-            }
+            alert('Anime added successfully!');
+            (e.target as HTMLFormElement).reset();
+            setStatus('planned');
         } catch (error) {
             console.error('Error:', error);
             alert('Error adding anime');
@@ -45,7 +51,7 @@ const AddForm = () => {
         }
     };
 
-    return (
+        return (
         <div className="mt-10">
             <form className="flex flex-col gap-5 w-xl" onSubmit={handleSubmit}>
                 <input
