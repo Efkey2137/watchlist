@@ -1,44 +1,59 @@
 "use client";
 import Nav from './components/nav';
-// Fragment do wklejenia np. w app/page.tsx tymczasowo
-import list from '@/app/data/list.json';
-import { db } from '@/app/lib/firebase';
-import { collection, addDoc } from 'firebase/firestore';
-import { useUserAuth } from '@/app/context/AuthContext';
-
-// Wewnątrz komponentu:
-
-
-// W JSX:
-// <button onClick={migrateData} className="bg-blue-500 p-4">Wgraj JSON do bazy</button>
+import { useUserAuth } from './context/AuthContext';
+import { db } from './lib/firebase';
+// Dodajemy potrzebne importy: updateDoc, doc, getDocs, query
+import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
+import { useState } from 'react';
 
 export default function Home() {
-  const { user } = useUserAuth();
+  const { user, logOut } = useUserAuth();
+  const [updating, setUpdating] = useState(false);
 
-const migrateData = async () => {
+  // Funkcja naprawcza - dodaje "type: anime" do wszystkich wpisów
+  const fixData = async () => {
     if (!user) return;
-    const colRef = collection(db, 'users', user.uid, 'items');
     
-    for (const item of list) {
-        await addDoc(colRef, {
-            ...item,
-            userId: user.uid,
-            createdAt: new Date()
+    if (!confirm("Czy na pewno chcesz zaktualizować wszystkie wpisy, ustawiając im typ 'anime'?")) return;
+
+    setUpdating(true);
+    try {
+      // 1. Pobieramy wszystkie dokumenty z kolekcji items użytkownika
+      const querySnapshot = await getDocs(collection(db, "users", user.uid, "items"));
+      
+      let count = 0;
+      // 2. Przechodzimy przez każdy dokument i go aktualizujemy
+      const updates = querySnapshot.docs.map(async (document) => {
+        const docRef = doc(db, "users", user.uid, "items", document.id);
+        
+        // updateDoc zmienia TYLKO podane pole, resztę zostawia bez zmian
+        await updateDoc(docRef, {
+          type: "anime" 
         });
-        console.log("Dodano:", item.name);
+        count++;
+      });
+
+      // Czekamy aż wszystkie się zaktualizują
+      await Promise.all(updates);
+      
+      alert(`Sukces! Zaktualizowano ${count} wpisów. Każdy ma teraz typ 'anime'.`);
+    } catch (e) {
+      console.error(e);
+      alert("Wystąpił błąd podczas aktualizacji.");
+    } finally {
+      setUpdating(false);
     }
-    alert("Migracja zakończona!");
-};
+  };
+
   return (
     <main className="bg-[#1C1C1C] text-[#E9E9E9] min-h-screen p-24">
       <h1 className="text-3xl">Dashboard</h1>
-        
-        <Nav />
+      <Nav />
 
-        <section className="mt-8">
-          <p>Welcome to your dashboard! Here you can manage your watchlists and rankings.</p>
-          <button onClick={migrateData} className="bg-blue-500 p-4">Wgraj JSON do bazy</button>
-        </section>
+      <section className="mt-8 flex flex-col gap-4 items-start">
+        <p>Witaj w panelu! {user ? `Zalogowano jako: ${user.displayName}` : "Nie jesteś zalogowany."}</p>
+        
+      </section>
     </main>
-    );
+  );
 }

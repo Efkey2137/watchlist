@@ -1,11 +1,11 @@
 "use client"
 import { useState } from "react";
-import { db } from "../lib/firebase"; // Import bazy
-import { collection, addDoc } from "firebase/firestore";
-import { useUserAuth } from "../context/AuthContext"; // Import usera
+import { db } from "../lib/firebase"; 
+import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
+import { useUserAuth } from "../context/AuthContext"; 
 
 const AddForm = () => {
-    const { user } = useUserAuth(); // Pobieramy zalogowanego usera
+    const { user } = useUserAuth();
     const [status, setStatus] = useState("planned");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -23,35 +23,52 @@ const AddForm = () => {
 
         setIsSubmitting(true);
         const formData = new FormData(e.currentTarget);
-        
-        // Przygotowanie danych
-        const newItem = {
-            name: formData.get('title') as string,
-            status: formData.get('status') as string,
-            score: Number(formData.get('score')) || 0,
-            tier: formData.get('tier') as string || "",
-            order: 0, // Logikę orderu można dodać później (np. pobrać max order + 1)
-            userId: user.uid, // Przypisujemy anime do konkretnego użytkownika
-            createdAt: new Date()
-        };
+        const title = formData.get('title') as string;
+        // 1. POBIERAMY TYP Z FORMULARZA
+        const type = formData.get('type') as string; 
 
         try {
-            // ZAPIS DO FIREBASE (zamiast fetch API)
-            // Tworzymy kolekcję wewnątrz dokumentu użytkownika: users -> UID -> items
+            // Sprawdzanie duplikatów po tytule (tak jak prosiłeś wcześniej)
+            const checkQuery = query(
+                collection(db, "users", user.uid, "items"),
+                where("name", "==", title)
+            );
+
+            const querySnapshot = await getDocs(checkQuery);
+
+            if (!querySnapshot.empty) {
+                alert(`Tytuł "${title}" znajduje się już na Twojej liście!`);
+                setIsSubmitting(false);
+                return;
+            }
+
+            // 2. DODAJEMY TYP DO OBIEKTU, KTÓRY LECI DO BAZY
+            const newItem = {
+                name: title,
+                type: type, // <-- Tutaj zapisujemy czy to anime/series/movie
+                status: formData.get('status') as string,
+                score: Number(formData.get('score')) || 0,
+                tier: formData.get('tier') as string || "",
+                order: 0, 
+                userId: user.uid, 
+                createdAt: new Date()
+            };
+
             await addDoc(collection(db, "users", user.uid, "items"), newItem);
 
-            alert('Anime added successfully!');
+            alert('Dodano pomyślnie!');
             (e.target as HTMLFormElement).reset();
             setStatus('planned');
+
         } catch (error) {
             console.error('Error:', error);
-            alert('Error adding anime');
+            alert('Błąd podczas dodawania');
         } finally {
             setIsSubmitting(false);
         }
     };
 
-        return (
+    return (
         <div className="mt-10">
             <form className="flex flex-col gap-5 w-xl" onSubmit={handleSubmit}>
                 <input
@@ -61,14 +78,26 @@ const AddForm = () => {
                     className="p-3 rounded-md bg-[#2C2C2C] text-white focus:outline-none h-16"
                     required
                 />
+
+                {/* NOWE POLE WYBORU TYPU */}
+                <select
+                    name="type"
+                    className="p-3 rounded-md bg-[#2C2C2C] text-white focus:outline-none h-16"
+                    defaultValue="anime"
+                    required
+                >
+                    <option value="anime">Anime</option>
+                    <option value="series">Series</option>
+                    <option value="movie">Movie</option>
+                </select>
+
                 <select
                     name="status"
                     className="p-3 rounded-md bg-[#2C2C2C] text-white focus:outline-none h-16"
-                    defaultValue="select"
+                    value={status}
                     onChange={handleStatusChange}
                     required
                 >
-                    <option value="select" disabled>Select Status</option>
                     <option value="planned">Planned</option>
                     <option value="watching">Watching</option>
                     <option value="completed">Completed</option>
@@ -100,7 +129,7 @@ const AddForm = () => {
                     disabled={isSubmitting}
                     className="w-fit bg-[#A71F36] hover:bg-[#D20000] text-white p-3 rounded-md text-xl disabled:opacity-50"
                 >
-                    {isSubmitting ? 'Adding...' : 'Add to Watchlist'}
+                    {isSubmitting ? 'Sprawdzanie...' : 'Add to Watchlist'}
                 </button>
             </form>
         </div>

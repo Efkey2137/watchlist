@@ -1,13 +1,19 @@
-// app/context/AuthContext.tsx
 "use client";
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { auth, googleProvider } from "../lib/firebase";
-import { signInWithPopup, signOut, onAuthStateChanged, User } from "firebase/auth";
+import { auth } from "../lib/firebase";
+import { 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  signOut, 
+  onAuthStateChanged, 
+  User 
+} from "firebase/auth";
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  googleSignIn: () => void;
+  signup: (email: string, pass: string) => Promise<void>;
+  login: (email: string, pass: string) => Promise<void>;
   logOut: () => void;
 }
 
@@ -17,8 +23,14 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const googleSignIn = () => {
-    signInWithPopup(auth, googleProvider);
+  // Rejestracja
+  const signup = async (email: string, pass: string) => {
+    await createUserWithEmailAndPassword(auth, email, pass);
+  };
+
+  // Logowanie
+  const login = async (email: string, pass: string) => {
+    await signInWithEmailAndPassword(auth, email, pass);
   };
 
   const logOut = () => {
@@ -34,7 +46,7 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, googleSignIn, logOut, loading }}>
+    <AuthContext.Provider value={{ user, signup, login, logOut, loading }}>
       {children}
     </AuthContext.Provider>
   );

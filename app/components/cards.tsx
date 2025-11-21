@@ -6,6 +6,8 @@ interface Item {
     status: string;
     score?: number;
     tier?: string;
+    type?: string;
+    createdAt?: any;
     order?: number;
 }
 
@@ -56,6 +58,8 @@ const Cards = ({ items }: CardsProps) => {
                     status={item.status} 
                     score={item.score} 
                     tier={item.tier}
+                    type={item.type}
+                    createdAt={item.createdAt}
                     order={item.order}
                 />
             ))}

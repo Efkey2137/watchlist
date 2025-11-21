@@ -15,6 +15,8 @@ interface Item {
     status: string;
     score?: number;
     tier?: string;
+    type?: string;
+    createdAt?: any;
     order?: number;
 }
 

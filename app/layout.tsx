@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import "./globals.css";
+import "@/app/globals.css";
 import { AuthContextProvider } from "@/app/context/AuthContext";
+import ProtectedRoute from "@/app/components/ProtectedRoute"; // <--- IMPORTUJ TUTAJ
 
 const inter = Inter({
   subsets: ['latin'],
@@ -20,11 +21,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${inter.className} antialiased`}
-      >
+      <body className={`${inter.className} antialiased`}>
         <AuthContextProvider>
-          {children}
+          {/* Owiń całą aplikację w ProtectedRoute */}
+          <ProtectedRoute>
+             {children}
+          </ProtectedRoute>
         </AuthContextProvider>
       </body>
     </html>

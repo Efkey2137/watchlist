@@ -5,6 +5,8 @@ interface CardProps {
     status: string;
     score?: number;
     tier?: string;
+    createdAt?: any;
+    type?: string;
     order?: number;
 }
 
@@ -15,7 +17,7 @@ const statusStyles: { [key: string]: string } = {
   planned: "border-gray-700 text-white",
 };
 
-const Card = ({ name, status, score, tier, order }: CardProps) => {
+const Card = ({ name, status, score, tier, order, createdAt, type }: CardProps) => {
   const normalizedStatus = status?.toLowerCase() || "";
   const cardStyle = statusStyles[normalizedStatus] || "bg-[#25262E] text-xl";
   
@@ -27,8 +29,9 @@ const Card = ({ name, status, score, tier, order }: CardProps) => {
         <div className="grow" />
         
         <div className="text-center">
+          
           {normalizedStatus === "planned" && order && (
-            <p className="text-lg">Order: {order}</p>
+            <p className="text-lg">{order}</p>
           )}
           
           {normalizedStatus !== "planned" && (
@@ -37,6 +40,10 @@ const Card = ({ name, status, score, tier, order }: CardProps) => {
           {normalizedStatus !== "planned" && tier && (
             <p className="text-lg truncate">{tier}</p>
           )}
+          <p className="text-sm text-gray-400 mb-2">Type: {type || "N/A"}</p>
+          <p className="text-sm text-gray-400 mb-2">
+            Created At: {createdAt ? new Date(createdAt).toLocaleDateString('pl-PL') : "N/A"}
+          </p>
         </div>
       </div>
     </div>
