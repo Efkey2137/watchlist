@@ -1,5 +1,4 @@
-// app/watchlist/page.tsx
-"use client"; // Musi być Client Component, żeby używać hooków
+"use client";
 import Nav from "../components/nav";
 import Cards from "../components/cards";
 import Link from "next/link";
@@ -7,6 +6,8 @@ import { useEffect, useState } from "react";
 import { db } from "../lib/firebase";
 import { collection, query, onSnapshot, orderBy } from "firebase/firestore";
 import { useUserAuth } from "../context/AuthContext";
+import FilterBar from "../components/FilterBar";
+import { Filter } from "firebase-admin/firestore";
 
 // Definicja typu (powtórzona z cards.tsx, warto by ją wydzielić do osobnego pliku types.ts)
 interface Item {
@@ -23,6 +24,7 @@ interface Item {
 export default function Watchlist() {
     const { user, loading } = useUserAuth();
     const [items, setItems] = useState<Item[]>([]);
+    const [filter, setFilter] = useState<string>("All");
 
     useEffect(() => {
         if (!user) return;
@@ -50,10 +52,15 @@ export default function Watchlist() {
             <main className="bg-[#1C1C1C] min-h-screen p-24 text-white">
                 <h1 className="text-3xl mb-5">Musisz się zalogować</h1>
                 <Nav />
-                {/* Tu możesz dodać przycisk do logowania lub przekierowanie */}
             </main>
         );
     }
+
+    const filteredItems = items.filter(item => {
+        if(filter === "All") return true;
+        else return item.type?.toLowerCase() === filter.toLowerCase();
+    })
+
 
     return (
         <main className="bg-[#1C1C1C] text-[#E9E9E9] min-h-screen p-24 min-w-screen">
@@ -64,8 +71,13 @@ export default function Watchlist() {
                     Add New Item
                 </div>
             </Link>
-            {/* Przekazujemy dane z bazy do Twojego komponentu Cards */}
-            <Cards items={items} />
+
+            {/*FilterBar */}
+            <FilterBar currentFiler={filter} onFilterChange={setFilter}/>
+
+
+            {/* Cards */}
+            <Cards items={filteredItems} />
         </main>
     );
 }

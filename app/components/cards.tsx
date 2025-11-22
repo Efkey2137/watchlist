@@ -50,7 +50,7 @@ const Cards = ({ items }: CardsProps) => {
     });
 
     return (
-        <div className="flex flex-row gap-5 flex-wrap mt-5 w-full">
+        <div className="flex flex-row gap-5 flex-wrap mt-5 w-full ease">
             {sortedItems.map((item, index) => (
                 <Card 
                     key={index}
