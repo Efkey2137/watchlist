@@ -8,18 +8,9 @@ import { collection, query, onSnapshot, orderBy } from "firebase/firestore";
 import { useUserAuth } from "../context/AuthContext";
 import FilterBar from "../components/FilterBar";
 import { Filter } from "firebase-admin/firestore";
+import "@/types/cardItem";
 
-// Definicja typu (powtórzona z cards.tsx, warto by ją wydzielić do osobnego pliku types.ts)
-interface Item {
-    id: string; // Dodajemy ID z bazy
-    name: string;
-    status: string;
-    score?: number;
-    tier?: string;
-    type?: string;
-    createdAt?: any;
-    order?: number;
-}
+
 
 export default function Watchlist() {
     const { user, loading } = useUserAuth();
