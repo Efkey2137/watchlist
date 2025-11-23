@@ -1,32 +1,36 @@
 "use client";
 import Nav from "../components/nav";
 import Cards from "../components/cards";
+import FilterBar from "../components/FilterBar";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { db } from "../lib/firebase";
-import { collection, query, onSnapshot, orderBy } from "firebase/firestore";
+import { collection, query, onSnapshot, doc, setDoc } from "firebase/firestore";
 import { useUserAuth } from "../context/AuthContext";
-import FilterBar from "../components/FilterBar";
-import { Filter } from "firebase-admin/firestore";
-import {Item} from "@/app/types/cardItem";
-import Modal from "@/app/components/EditModal";
-
-
+import { Item } from "../types/cardItem";
+import SortBar from "../components/SortBar";
+import { sortItems, SortKey } from "../utils/sortItems";
+import EditModal from "../components/EditModal";
+import { AnimatePresence } from "framer-motion";
 
 export default function Watchlist() {
     const { user, loading } = useUserAuth();
     const [items, setItems] = useState<Item[]>([]);
-    const [filter, setFilter] = useState<string>("All");
+    
+    // Stan filtrów
+    const [filter, setFilter] = useState("All");
+    
+    // Stan sortowania (domyślny)
+    const [activeSorts, setActiveSorts] = useState<SortKey[]>(["status", "score"]);
+
+    // Stan edycji (modal)
     const [editingItem, setEditingItem] = useState<Item | null>(null);
 
+    // 1. POBIERANIE ELEMENTÓW (ITEMS) Z BAZY
     useEffect(() => {
         if (!user) return;
 
-        // Zapytanie do bazy: Daj elementy tego usera
         const q = query(collection(db, "users", user.uid, "items"));
-
-        // onSnapshot to nasłuchwianie w czasie rzeczywistym!
-        // Jak dodasz coś w innej karcie, tu pojawi się od razu.
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const itemsData = snapshot.docs.map(doc => ({
                 id: doc.id,
@@ -38,6 +42,65 @@ export default function Watchlist() {
         return () => unsubscribe();
     }, [user]);
 
+    // 2. POBIERANIE USTAWIEŃ SORTOWANIA Z BAZY
+    useEffect(() => {
+        if (!user) return;
+
+        const userDocRef = doc(db, "users", user.uid);
+        const unsubscribe = onSnapshot(userDocRef, (docSnapshot) => {
+            if (docSnapshot.exists()) {
+                const data = docSnapshot.data();
+                // Sprawdzamy czy pole istnieje i czy jest tablicą
+                if (data?.activeSorts && Array.isArray(data.activeSorts)) {
+                    setActiveSorts(data.activeSorts);
+                }
+            }
+        });
+
+        return () => unsubscribe();
+    }, [user]);
+
+    // Funkcja zmiany sortowania (Zapis do Firebase)
+    const toggleSort = async (key: SortKey) => {
+        let newSorts: SortKey[] = [];
+        
+        if (activeSorts.includes(key)) {
+            newSorts = activeSorts.filter((k) => k !== key);
+        } else {
+            newSorts = [...activeSorts, key];
+        }
+
+        // Optimistic UI (aktualizuj od razu)
+        setActiveSorts(newSorts);
+
+        // Zapisz w tle
+        if (user) {
+            try {
+                await setDoc(
+                    doc(db, "users", user.uid), 
+                    { activeSorts: newSorts }, 
+                    { merge: true }
+                );
+            } catch (e) {
+                console.error("Błąd zapisu preferencji:", e);
+            }
+        }
+    };
+
+    // Funkcja otwierania modala
+    const handleEdit = (item: Item) => {
+        setEditingItem(item);
+    };
+
+    // LOGIKA PRZETWARZANIA DANYCH (Filtr -> Sort)
+    const filteredItems = items.filter((item) => {
+        if (filter === "All") return true;
+        return item.type?.toLowerCase() === filter.toLowerCase();
+    });
+
+    const finalItems = sortItems(filteredItems, activeSorts);
+
+    // UI DLA STANU LOADING / BRAK USERA
     if (loading) return <main className="bg-[#1C1C1C] min-h-screen p-24 text-white">Ładowanie...</main>;
 
     if (!user) {
@@ -49,40 +112,34 @@ export default function Watchlist() {
         );
     }
 
-    const filteredItems = items.filter(item => {
-        if(filter === "All") return true;
-        else return item.type?.toLowerCase() === filter.toLowerCase();
-    })
-
-    const handleEdit = (item: Item) => {
-        setEditingItem(item);
-    };
-
-
     return (
-        <main className="bg-[#1C1C1C] text-[#E9E9E9] min-h-screen p-24 min-w-screen">
+        <main className="bg-[#1C1C1C] text-[#E9E9E9] p-24">
             <h1 className="text-3xl">Watchlist</h1>
             <Nav />
+            
+            <div className="mt-5">
+                <FilterBar currentFilter={filter} onFilterChange={setFilter} />
+            </div>
+
+            <SortBar activeSorts={activeSorts} onToggleSort={toggleSort} />
+
             <Link href="/watchlist/new">
-                <div className="mt-5 w-fit bg-[#A71F36] hover:bg-[#D20000] text-white p-3 rounded-md text-xl hover:cursor-pointer">
+                <div className="mt-5 w-fit bg-[#A71F36] hover:bg-[#D20000] text-white p-3 rounded-md text-xl hover:cursor-pointer mb-8">
                     Add New Item
                 </div>
             </Link>
 
-            {/*FilterBar */}
-            <FilterBar currentFiler={filter} onFilterChange={setFilter}/>
+            <Cards items={finalItems} onEdit={handleEdit} />
 
-
-            {/* Cards */}
-            <Cards items={filteredItems} onEdit={handleEdit} />
-
-            {/* Edit Modal */}
-            {editingItem && (
-                <Modal 
-                    item={editingItem} 
-                    onClose={() => setEditingItem(null)} 
-                />
-            )}
+            <AnimatePresence>
+                {editingItem && (
+                    <EditModal 
+                        key="edit-modal"
+                        item={editingItem} 
+                        onClose={() => setEditingItem(null)} 
+                    />
+                )}
+            </AnimatePresence>
         </main>
     );
 }
