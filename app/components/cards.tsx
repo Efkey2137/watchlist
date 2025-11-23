@@ -1,21 +1,13 @@
 import Card from "./card";
 import "../globals.css"
-
-interface Item {
-    name: string;
-    status: string;
-    score?: number;
-    tier?: string;
-    type?: string;
-    createdAt?: any;
-    order?: number;
-}
+import { Item } from "@/app/types/cardItem";
 
 interface CardsProps {
     items: Item[];
+    onEdit: (item: Item)  => void;
 }
 
-const Cards = ({ items }: CardsProps) => {
+const Cards = ({ items, onEdit }: CardsProps) => {
     // Sortuj tablicę według statusu i odpowiednich kryteriów
     const sortedItems = [...items].sort((a, b) => {
         const statusA = a.status.toLowerCase();
@@ -54,13 +46,8 @@ const Cards = ({ items }: CardsProps) => {
             {sortedItems.map((item, index) => (
                 <Card 
                     key={index}
-                    name={item.name} 
-                    status={item.status} 
-                    score={item.score} 
-                    tier={item.tier}
-                    type={item.type}
-                    createdAt={item.createdAt}
-                    order={item.order}
+                    item={item}
+                    onClick={() => onEdit(item)}
                 />
             ))}
         </div>

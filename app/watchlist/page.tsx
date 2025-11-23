@@ -8,7 +8,8 @@ import { collection, query, onSnapshot, orderBy } from "firebase/firestore";
 import { useUserAuth } from "../context/AuthContext";
 import FilterBar from "../components/FilterBar";
 import { Filter } from "firebase-admin/firestore";
-import "@/types/cardItem";
+import {Item} from "@/app/types/cardItem";
+import Modal from "@/app/components/EditModal";
 
 
 
@@ -16,6 +17,7 @@ export default function Watchlist() {
     const { user, loading } = useUserAuth();
     const [items, setItems] = useState<Item[]>([]);
     const [filter, setFilter] = useState<string>("All");
+    const [editingItem, setEditingItem] = useState<Item | null>(null);
 
     useEffect(() => {
         if (!user) return;
@@ -52,6 +54,10 @@ export default function Watchlist() {
         else return item.type?.toLowerCase() === filter.toLowerCase();
     })
 
+    const handleEdit = (item: Item) => {
+        setEditingItem(item);
+    };
+
 
     return (
         <main className="bg-[#1C1C1C] text-[#E9E9E9] min-h-screen p-24 min-w-screen">
@@ -68,7 +74,15 @@ export default function Watchlist() {
 
 
             {/* Cards */}
-            <Cards items={filteredItems} />
+            <Cards items={filteredItems} onEdit={handleEdit} />
+
+            {/* Edit Modal */}
+            {editingItem && (
+                <Modal 
+                    item={editingItem} 
+                    onClose={() => setEditingItem(null)} 
+                />
+            )}
         </main>
     );
 }

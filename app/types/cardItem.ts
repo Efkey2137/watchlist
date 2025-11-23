@@ -7,4 +7,5 @@ export interface Item {
     type?: string;
     createdAt?: any;
     order?: number;
+    userId?: string;
 }

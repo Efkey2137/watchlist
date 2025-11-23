@@ -1,13 +1,9 @@
 import Link from "next/link";
+import { Item } from "@/app/types/cardItem";
 
 interface CardProps {
-    name: string;
-    status: string;
-    score?: number;
-    tier?: string;
-    createdAt?: any;
-    type?: string;
-    order?: number;
+    item: Item;
+    onClick?: () => void;
 }
 
 const statusStyles: { [key: string]: string } = {
@@ -17,7 +13,10 @@ const statusStyles: { [key: string]: string } = {
   planned: "border-gray-700 text-white",
 };
 
-const Card = ({ name, status, score, tier, order, createdAt, type }: CardProps) => {
+const Card = ({ item, onClick }: CardProps) => {
+
+  const { name, status, score, tier, order, createdAt, type } = item;
+  
   const normalizedStatus = status?.toLowerCase() || "";
   const cardStyle = statusStyles[normalizedStatus] || "bg-[#25262E] text-xl";
   
@@ -35,7 +34,7 @@ const Card = ({ name, status, score, tier, order, createdAt, type }: CardProps) 
   };
 
   return (
-    <div className={`rounded-2xl w-54 h-54 hover:cursor-pointer hover:bg-[#2A2B32] transition-all hover:scale-110 shadow p-5 border-2 overflow-hidden flex flex-col ${cardStyle}`}>
+    <div onClick={onClick} className={`rounded-2xl w-54 h-54 hover:cursor-pointer hover:bg-[#2A2B32] transition-all hover:scale-110 shadow p-5 border-2 overflow-hidden flex flex-col ${cardStyle}`}>
       <div aria-label={name} className="flex flex-col h-full">
         <h2 className="text-xl mb-2 text-center font-bold">{name}</h2>
         
