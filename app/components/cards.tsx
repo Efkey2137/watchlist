@@ -10,7 +10,7 @@ interface CardsProps {
 const Cards = ({ items, onEdit }: CardsProps) => {
 
     return (
-        <div className="flex flex-row gap-5 flex-wrap mt-5 w-full ease">
+        <div className="flex flex-row gap-4 justify-center flex-wrap mt-5 w-full ease">
             {items.map((item, index) => (
                 <Card 
                     key={index}

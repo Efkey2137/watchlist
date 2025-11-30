@@ -116,30 +116,37 @@ export default function Watchlist() {
         <main className="bg-[#1C1C1C] text-[#E9E9E9] min-h-screen p-4 md:p-24">
             <h1 className="text-3xl">Watchlist</h1>
             <Nav />
+
             
-            <div className="mt-5">
-                <FilterBar currentFilter={filter} onFilterChange={setFilter} />
-            </div>
+            
+
+            <div className="flex flex-col items-center sm:block">
+                <div className="mt-5">
+                    <FilterBar currentFilter={filter} onFilterChange={setFilter} />
+                </div>
 
             <SortBar activeSorts={activeSorts} onToggleSort={toggleSort} />
+                
 
-            <Link href="/watchlist/new">
-                <div className="mt-5 w-fit bg-[#A71F36] hover:bg-[#D20000] text-white p-3 rounded-md text-xl hover:cursor-pointer mb-8">
-                    Add New Item
-                </div>
-            </Link>
+                <Link href="/watchlist/new">
+                    <div className="mt-5 w-fit bg-[#A71F36] hover:bg-[#D20000] text-white p-3 rounded-md text-xl hover:cursor-pointer mb-8">
+                        Add New Item
+                    </div>
+                </Link>
 
-            <Cards items={finalItems} onEdit={handleEdit} />
+                <Cards items={finalItems} onEdit={handleEdit} />
 
-            <AnimatePresence>
-                {editingItem && (
-                    <EditModal 
-                        key="edit-modal"
-                        item={editingItem} 
-                        onClose={() => setEditingItem(null)} 
-                    />
-                )}
-            </AnimatePresence>
+                <AnimatePresence>
+                    {editingItem && (
+                        <EditModal 
+                            key="edit-modal"
+                            item={editingItem} 
+                            onClose={() => setEditingItem(null)} 
+                        />
+                    )}
+                </AnimatePresence>
+            </div>
+            
         </main>
     );
 }

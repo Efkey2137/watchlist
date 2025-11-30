@@ -34,7 +34,7 @@ const Card = ({ item, onClick }: CardProps) => {
   };
 
   return (
-    <div onClick={onClick} className={`rounded-2xl w-54 h-54 hover:cursor-pointer hover:bg-[#2A2B32] transition-all hover:scale-110 shadow p-5 border-2 overflow-hidden flex flex-col ${cardStyle}`}>
+    <div onClick={onClick} className={`rounded-2xl w-72 h-50 sm:w-54 sm:h-54 hover:cursor-pointer hover:bg-[#2A2B32] transition-all hover:scale-110 shadow p-5 border-2 overflow-hidden flex flex-col ${cardStyle}`}>
       <div aria-label={name} className="flex flex-col h-full">
         <h2 className="text-xl mb-2 text-center font-bold">{name}</h2>
         
