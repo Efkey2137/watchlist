@@ -55,7 +55,7 @@ export default function ProfilePage() {
   const initial = displayName.charAt(0).toUpperCase();
 
   return (
-    <main className="bg-[#1C1C1C] text-[#E9E9E9] min-h-screen p-24">
+    <main className="bg-[#1C1C1C] text-[#E9E9E9] min-h-screen p-4 md:p-24">
       <h1 className="text-3xl font-bold mb-6">Twój Profil</h1>
         
       <Nav />

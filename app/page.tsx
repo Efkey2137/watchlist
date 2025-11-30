@@ -46,12 +46,13 @@ export default function Home() {
   };
 
   return (
-    <main className="bg-[#1C1C1C] text-[#E9E9E9] min-h-screen p-24">
-      <h1 className="text-3xl">Dashboard</h1>
+<main className="bg-[#1C1C1C] text-[#E9E9E9] min-h-screen p-4 md:p-24">
+        <h1 className="text-3xl">Dashboard</h1>
       <Nav />
 
       <section className="mt-8 flex flex-col gap-4 items-start">
-        <p>Witaj w panelu! {user ? `Zalogowano jako: ${user.displayName}` : "Nie jesteś zalogowany."}</p>
+        <p>Witaj  {user ? `${user.displayName}!` : "Nie jesteś zalogowany."}</p>
+        
         
       </section>
     </main>

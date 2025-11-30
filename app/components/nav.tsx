@@ -9,15 +9,14 @@ const tabs = [
 
 const Nav = () => {
     return (
-        <nav className="flex rounded-md text-xl mt-3 w-fit" aria-label="Tabs">
+        <nav className="flex flex-wrap gap-2 rounded-md text-xl mt-3 w-full md:w-fit" aria-label="Tabs">
           {tabs.map((tab) => (
             <Link key={tab.name} href={tab.href}>
-              <div className=" mr-3 text-[#A71F36] hover:text-[#D20000] hover:bg-[#25262E] p-5 rounded-md">
+              <div className="text-[#A71F36] hover:text-[#D20000] hover:bg-[#25262E] p-3 md:p-5 rounded-md text-sm md:text-xl transition-colors">
                 {tab.name}
               </div>
             </Link>
           ))}
-
         </nav>
     );
 }

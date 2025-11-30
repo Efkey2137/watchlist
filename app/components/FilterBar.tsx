@@ -5,7 +5,7 @@ interface FilterProps{
     onFilterChange: Function,
 }
 
-const listOfFilters = ["All", "Anime", "Movies", "Series"];
+const listOfFilters = ["All", "Anime", "Movie", "Series"];
 
 
 

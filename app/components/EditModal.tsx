@@ -1,7 +1,17 @@
 "use client";
 import { useState } from "react";
 import { db } from "../lib/firebase";
-import { doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { 
+  doc, 
+  updateDoc, 
+  deleteDoc, 
+  writeBatch, 
+  collection, 
+  query, 
+  where, 
+  getDocs, 
+  increment 
+} from "firebase/firestore";
 import { useUserAuth } from "../context/AuthContext";
 import { Item } from "../types/cardItem";
 import { useEffect } from "react";
@@ -32,21 +42,59 @@ export default function EditModal({ item, onClose }: EditModalProps) {
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
-    
-    // Przygotuj dane do aktualizacji
+    const newStatus = formData.get("status") as string;
+    const oldStatus = item.status;
+    const oldOrder = item.order || 0; // Pobieramy stary numer porządkowy
+
+    // Dane do aktualizacji obecnego elementu
     const updatedData = {
       name: formData.get("name") as string,
-      status: formData.get("status") as string,
+      status: newStatus,
       type: formData.get("type") as string,
       score: Number(formData.get("score")) || 0,
-      order: formData.get("status") !== "completed" ? Number(formData.get("order")) || 0 : undefined,
       tier: formData.get("tier") as string,
+      // Jeśli wychodzimy z 'planned', resetujemy order na 0, w przeciwnym razie bierzemy z formularza (lub zostawiamy stary)
+      order: (oldStatus === "planned" && newStatus !== "planned") ? 0 : (item.order || 0), 
     };
 
-
     try {
-      const docRef = doc(db, "users", user.uid, "items", item.id);
-      await updateDoc(docRef, updatedData);
+      // SPRAWDZAMY WARUNEK: Czy element był "planned", zmienia status na inny I miał jakiś numer w kolejce?
+      if (oldStatus === "planned" && newStatus !== "planned" && oldOrder > 0) {
+        
+        // 1. Inicjalizujemy Batch (paczkę operacji)
+        const batch = writeBatch(db);
+
+        // 2. Dodajemy do paczki aktualizację obecnego elementu (tego, który przenosimy)
+        const currentItemRef = doc(db, "users", user.uid, "items", item.id);
+        batch.update(currentItemRef, updatedData);
+
+        // 3. Szukamy wszystkich elementów, które były ZA tym elementem w kolejce
+        // (czyli mają status 'planned' i order większy niż stary order naszego elementu)
+        const q = query(
+            collection(db, "users", user.uid, "items"),
+            where("status", "==", "planned"),
+            where("order", ">", oldOrder)
+        );
+
+        const snapshot = await getDocs(q);
+
+        // 4. Dla każdego znalezionego elementu, zmniejszamy jego order o 1
+        snapshot.forEach((document) => {
+            const docRef = doc(db, "users", user.uid, "items", document.id);
+            // increment(-1) to bezpieczny sposób na odjęcie 1 po stronie bazy
+            batch.update(docRef, { order: increment(-1) });
+        });
+
+        // 5. Wykonujemy wszystkie te operacje naraz
+        await batch.commit();
+
+      } else {
+        // --- SCENARIUSZ STANDARDOWY (Brak zmian w kolejności) ---
+        // Np. zmiana oceny, zmiana nazwy, albo zmiana z 'watching' na 'completed'
+        const docRef = doc(db, "users", user.uid, "items", item.id);
+        await updateDoc(docRef, updatedData);
+      }
+
       onClose(); // Zamknij po sukcesie
     } catch (error) {
       console.error("Błąd aktualizacji:", error);
