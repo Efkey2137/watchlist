@@ -2,48 +2,51 @@
 import Nav from './components/nav';
 import { useUserAuth } from './context/AuthContext';
 import { db } from './lib/firebase';
-// Dodajemy potrzebne importy: updateDoc, doc, getDocs, query
-import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
-import { useState } from 'react';
+import { collection, query, onSnapshot, doc, setDoc } from "firebase/firestore";
+import { useState, useEffect } from 'react';
+import {Item} from './types/cardItem';
+import Cards from './components/card';
+import { sortItems, SortKey } from "./utils/sortItems";
 
-export default function Home() {
-  const { user, logOut } = useUserAuth();
-  const [updating, setUpdating] = useState(false);
 
-  // Funkcja naprawcza - dodaje "type: anime" do wszystkich wpisów
-  const fixData = async () => {
-    if (!user) return;
-    
-    if (!confirm("Czy na pewno chcesz zaktualizować wszystkie wpisy, ustawiając im typ 'anime'?")) return;
+  interface CardsProps {
+    items: Item[];
+    onEdit: (item: Item)  => void;
+}
 
-    setUpdating(true);
-    try {
-      // 1. Pobieramy wszystkie dokumenty z kolekcji items użytkownika
-      const querySnapshot = await getDocs(collection(db, "users", user.uid, "items"));
-      
-      let count = 0;
-      // 2. Przechodzimy przez każdy dokument i go aktualizujemy
-      const updates = querySnapshot.docs.map(async (document) => {
-        const docRef = doc(db, "users", user.uid, "items", document.id);
-        
-        // updateDoc zmienia TYLKO podane pole, resztę zostawia bez zmian
-        await updateDoc(docRef, {
-          type: "anime" 
-        });
-        count++;
-      });
+export default function Home(CardProps: CardsProps) {
+  const { user, loading } = useUserAuth();
+  const [items, setItems] = useState<Item[]>([]);
+  const [activeSorts, setActiveSorts] = useState<SortKey[]>(["order", "name"]);
+  const [editingItem, setEditingItem] = useState<Item | null>(null);
 
-      // Czekamy aż wszystkie się zaktualizują
-      await Promise.all(updates);
-      
-      alert(`Sukces! Zaktualizowano ${count} wpisów. Każdy ma teraz typ 'anime'.`);
-    } catch (e) {
-      console.error(e);
-      alert("Wystąpił błąd podczas aktualizacji.");
-    } finally {
-      setUpdating(false);
-    }
-  };
+  useEffect(() => {
+          if (!user) return;
+  
+          const q = query(collection(db, "users", user.uid, "items"));
+          const unsubscribe = onSnapshot(q, (snapshot) => {
+              const itemsData = snapshot.docs.map(doc => ({
+                  id: doc.id,
+                  ...doc.data()
+              })) as Item[];
+              setItems(itemsData);
+          });
+  
+          return () => unsubscribe();
+      }, [user]);
+
+
+  const handleEdit = (item: Item) => {
+        setEditingItem(item);
+    };
+
+  if (loading) {
+    return <main className="bg-[#1C1C1C] min-h-screen p-24 text-white">Ładowanie...</main>;
+  }
+
+  if (!user) {
+    return <main className="bg-[#1C1C1C] min-h-screen p-24 text-white">Zaloguj się</main>;
+}
 
   return (
 <main className="bg-[#1C1C1C] text-[#E9E9E9] min-h-screen p-4 md:p-24">
@@ -51,7 +54,8 @@ export default function Home() {
       <Nav />
 
       <section className="mt-8 flex flex-col gap-4 items-start">
-        <p>Witaj  {user ? `${user.displayName}!` : "Nie jesteś zalogowany."}</p>
+
+        <Cards items={items} onEdit={handleEdit} />
         
         
       </section>
