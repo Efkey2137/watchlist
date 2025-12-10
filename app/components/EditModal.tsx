@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { db } from "../lib/firebase";
 import { 
   doc, 
@@ -14,7 +14,6 @@ import {
 } from "firebase/firestore";
 import { useUserAuth } from "../context/AuthContext";
 import { Item } from "../types/cardItem";
-import { useEffect } from "react";
 
 interface EditModalProps {
   item: Item;
@@ -24,17 +23,16 @@ interface EditModalProps {
 export default function EditModal({ item, onClose }: EditModalProps) {
   const { user } = useUserAuth();
   const [loading, setLoading] = useState(false);
+  
+  // NOWOŚĆ: Stan dla statusu, żeby dynamicznie pokazywać/ukrywać pola w modalu
+  const [currentStatus, setCurrentStatus] = useState(item.status);
 
-
-    useEffect(() => {
-        // Zablokuj scrollowanie strony głównej
-        document.body.style.overflow = "hidden";
-        
-        // Odblokuj scrollowanie, gdy modal zniknie (cleanup function)
-        return () => {
-        document.body.style.overflow = "unset";
-        };
-    }, []);
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, []);
 
   const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -43,59 +41,56 @@ export default function EditModal({ item, onClose }: EditModalProps) {
 
     const formData = new FormData(e.currentTarget);
     const newStatus = formData.get("status") as string;
-    const oldStatus = item.status;
-    const oldOrder = item.order || 0; // Pobieramy stary numer porządkowy
+    const formOrderInput = formData.get("order");
+    const formOrder = formOrderInput ? Number(formOrderInput) : null;
 
-    // Dane do aktualizacji obecnego elementu
+    const oldStatus = item.status;
+    const oldOrder = item.order || 0; 
+
+    let finalOrder = 0;
+    if (newStatus === "planned") {
+        finalOrder = formOrder !== null ? formOrder : oldOrder;
+    }
+
     const updatedData = {
       name: formData.get("name") as string,
       status: newStatus,
       type: formData.get("type") as string,
       score: Number(formData.get("score")) || 0,
       tier: formData.get("tier") as string,
-      // Jeśli wychodzimy z 'planned', resetujemy order na 0, w przeciwnym razie bierzemy z formularza (lub zostawiamy stary)
-      order: (oldStatus === "planned" && newStatus !== "planned") ? 0 : (item.order || 0), 
+      order: finalOrder,
     };
 
     try {
-      // SPRAWDZAMY WARUNEK: Czy element był "planned", zmienia status na inny I miał jakiś numer w kolejce?
+      // Jeśli wychodzi z planned i miał order > 0, przesuwamy resztę
       if (oldStatus === "planned" && newStatus !== "planned" && oldOrder > 0) {
         
-        // 1. Inicjalizujemy Batch (paczkę operacji)
         const batch = writeBatch(db);
-
-        // 2. Dodajemy do paczki aktualizację obecnego elementu (tego, który przenosimy)
         const currentItemRef = doc(db, "users", user.uid, "items", item.id);
         batch.update(currentItemRef, updatedData);
 
-        // 3. Szukamy wszystkich elementów, które były ZA tym elementem w kolejce
-        // (czyli mają status 'planned' i order większy niż stary order naszego elementu)
         const q = query(
             collection(db, "users", user.uid, "items"),
             where("status", "==", "planned"),
+            where("type", "==", item.type),
             where("order", ">", oldOrder)
         );
 
         const snapshot = await getDocs(q);
 
-        // 4. Dla każdego znalezionego elementu, zmniejszamy jego order o 1
-        snapshot.forEach((document) => {
-            const docRef = doc(db, "users", user.uid, "items", document.id);
-            // increment(-1) to bezpieczny sposób na odjęcie 1 po stronie bazy
+        snapshot.docs.forEach((docSnap) => {
+            const docRef = doc(db, "users", user.uid, "items", docSnap.id);
             batch.update(docRef, { order: increment(-1) });
         });
 
-        // 5. Wykonujemy wszystkie te operacje naraz
         await batch.commit();
 
       } else {
-        // --- SCENARIUSZ STANDARDOWY (Brak zmian w kolejności) ---
-        // Np. zmiana oceny, zmiana nazwy, albo zmiana z 'watching' na 'completed'
         const docRef = doc(db, "users", user.uid, "items", item.id);
         await updateDoc(docRef, updatedData);
       }
 
-      onClose(); // Zamknij po sukcesie
+      onClose();
     } catch (error) {
       console.error("Błąd aktualizacji:", error);
       alert("Nie udało się zaktualizować wpisu.");
@@ -106,18 +101,45 @@ export default function EditModal({ item, onClose }: EditModalProps) {
 
   const handleDelete = async () => {
     if (!user || !confirm("Czy na pewno chcesz usunąć ten element?")) return;
+    setLoading(true);
+    
+    const oldStatus = item.status;
+    const oldOrder = item.order || 0;
+
     try {
-      await deleteDoc(doc(db, "users", user.uid, "items", item.id));
+      if (oldStatus === "planned" && oldOrder > 0) {
+          const batch = writeBatch(db);
+          const itemRef = doc(db, "users", user.uid, "items", item.id);
+          batch.delete(itemRef);
+
+          const q = query(
+            collection(db, "users", user.uid, "items"),
+            where("status", "==", "planned"),
+            where("type", "==", item.type),
+            where("order", ">", oldOrder)
+          );
+          const snapshot = await getDocs(q);
+          
+          snapshot.docs.forEach((docSnap) => {
+             batch.update(docSnap.ref, { order: increment(-1) });
+          });
+
+          await batch.commit();
+      } else {
+          await deleteDoc(doc(db, "users", user.uid, "items", item.id));
+      }
+      
       onClose();
     } catch (error) {
         console.error(error);
+        alert("Błąd usuwania.");
+    } finally {
+        setLoading(false);
     }
   };
 
   return (
-    // Overlay (tło)
-<div className="fixed inset-0 bg-black/70 z-50 flex justify-center items-center overflow-y-auto" onClick={onClose}>
-      {/* Okno Modala (zatrzymujemy propagację kliknięcia, żeby nie zamknąć okna klikając w środek) */}
+    <div className="fixed inset-0 bg-black/70 z-50 flex justify-center items-center overflow-y-auto" onClick={onClose}>
       <div className="bg-[#2C2C2C] p-8 rounded-xl w-full max-w-md relative border border-gray-700 shadow-2xl" onClick={(e) => e.stopPropagation()}>
         
         <h2 className="text-2xl text-white mb-6 font-bold text-center">{item.name}</h2>
@@ -136,7 +158,12 @@ export default function EditModal({ item, onClose }: EditModalProps) {
           <div className="flex gap-4">
             <div className="flex-1">
                 <label className="text-gray-400 text-sm">Status</label>
-                <select name="status" defaultValue={item.status} className="w-full p-3 rounded bg-[#1C1C1C] text-white border border-gray-600 outline-none h-12">
+                <select 
+                    name="status" 
+                    value={currentStatus} 
+                    onChange={(e) => setCurrentStatus(e.target.value)} // Aktualizujemy stan przy zmianie
+                    className="w-full p-3 rounded bg-[#1C1C1C] text-white border border-gray-600 outline-none h-12"
+                >
                     <option value="planned">Planned</option>
                     <option value="watching">Watching</option>
                     <option value="completed">Completed</option>
@@ -154,36 +181,51 @@ export default function EditModal({ item, onClose }: EditModalProps) {
           </div>
 
           <div className="flex gap-4">
-            {item.status !== "planned" && (
+            {/* Score: Widoczne zawsze, OPRÓCZ Planned */}
+            {currentStatus !== "planned" && (
                 <div className="flex-1">
-                <label className="text-gray-400 text-sm">Ocena</label>
-                <input name="score" type="number" step="0.1" defaultValue={item.score} className="w-full p-3 rounded bg-[#1C1C1C] text-white border border-gray-600 outline-none" />
-             </div>
+                    <label className="text-gray-400 text-sm">Ocena</label>
+                    <input 
+                        name="score" 
+                        type="number" 
+                        step="0.1" 
+                        defaultValue={item.score} 
+                        className="w-full p-3 rounded bg-[#1C1C1C] text-white border border-gray-600 outline-none" 
+                    />
+                </div>
             )}
              
-
-            {item.status === "completed" && (
+            {/* Tier: Widoczny TYLKO dla Dropped */}
+            {currentStatus === "dropped" && (
                 <div className="flex-1">
-                <label className="text-gray-400 text-sm">Tier</label>
-                <input name="tier" defaultValue={item.tier} className="w-full p-3 rounded bg-[#1C1C1C] text-white border border-gray-600 outline-none" />
-             </div>
+                    <label className="text-gray-400 text-sm">Reason (Tier)</label>
+                    <input 
+                        name="tier" 
+                        defaultValue={item.tier} 
+                        className="w-full p-3 rounded bg-[#1C1C1C] text-white border border-gray-600 outline-none" 
+                    />
+                </div>
             )}
-            {item.status !== "completed" && (
+
+            {/* Order: Widoczny TYLKO dla Planned */}
+            {currentStatus === "planned" && (
                 <div className="flex-1">
                     <label className="text-gray-400 text-sm">Order</label>
-                    <input name="order" defaultValue={item.order} className="w-full p-3 rounded bg-[#1C1C1C] text-white border border-gray-600 outline-none" />
-                    </div>
+                    <input 
+                        name="order" 
+                        type="number" 
+                        defaultValue={item.order} 
+                        className="w-full p-3 rounded bg-[#1C1C1C] text-white border border-gray-600 outline-none" 
+                    />
+                </div>
             )}
-             
-
-
           </div>
 
           <div className="flex gap-3 mt-4">
             <button type="submit" disabled={loading} className="flex-1 bg-[#A71F36] hover:bg-[#D20000] text-white p-3 rounded font-bold transition">
               {loading ? "Zapisywanie..." : "Zapisz"}
             </button>
-            <button type="button" onClick={handleDelete} className="px-4 py-3 bg-red-900/50 hover:bg-red-900 text-red-200 rounded transition border border-red-800">
+            <button type="button" disabled={loading} onClick={handleDelete} className="px-4 py-3 bg-red-900/50 hover:bg-red-900 text-red-200 rounded transition border border-red-800">
                 Usuń
             </button>
           </div>
